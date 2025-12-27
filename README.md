@@ -9,6 +9,26 @@ Agent Guardrail is a security framework designed to act as a **Policy Enforcemen
 -   **Sandboxing**: Executes authorized actions within a Docker container to prevent harm to the host system.
 -   **Configurable Policies**: Policies are defined in `policy/main.rego` and can be easily updated.
 
+## Architecture
+
+```mermaid
+graph TD
+    Agent[Simulated Agent] -->|1. Call Tool| PEP[Policy Enforcement Point]
+    PEP -->|2. Check Permission| OPAClient[OPA Client]
+    OPAClient -->|3. HTTP POST /v1/data...| OPA[OPA Container]
+    OPA -.->|4. Load Policy| Policy[policy/main.rego]
+    OPA -->|5. Allow/Deny| OPAClient
+    OPAClient -->|6. Result| PEP
+
+    PEP -- Allowed --> Sandbox[Sandbox]
+    PEP -- Denied --> Error[Raise PermissionError]
+
+    Sandbox -->|7. Run Command| Worker[Worker Container (Python:3.9-slim)]
+    Worker -->|8. Output| Sandbox
+    Sandbox -->|9. Output| PEP
+    PEP -->|10. Result| Agent
+```
+
 ## Prerequisites
 
 -   **Docker**: Required for running the OPA server and the execution sandbox.
